@@ -1,0 +1,1532 @@
+"""
+CloudSage Comprehensive Project Documentation PDF Generator.
+Builds a high-definition HTML document and converts it to a professional PDF using Headless Chrome.
+"""
+
+import os
+import subprocess
+from pathlib import Path
+
+# Paths
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUT_HTML = BASE_DIR / "CloudSage_Documentation.html"
+OUTPUT_PDF = BASE_DIR / "CloudSage_Project_Documentation.pdf"
+CHROME_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+if not os.path.exists(CHROME_PATH):
+    CHROME_PATH = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+
+html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CloudSage — Technical Documentation & Architectural Specification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+  @page {
+    size: A4 portrait;
+    margin: 18mm 15mm 20mm 15mm;
+    @bottom-right {
+      content: counter(page);
+      font-family: 'Inter', sans-serif;
+      font-size: 8pt;
+      color: #718096;
+    }
+    @bottom-left {
+      content: "CloudSage Technical Documentation | GenAI Cloud Operations & FinOps";
+      font-family: 'Inter', sans-serif;
+      font-size: 8pt;
+      color: #718096;
+    }
+  }
+
+  @page:first {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    margin-right: 0;
+    @bottom-right { content: normal; }
+    @bottom-left { content: normal; }
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.58;
+    color: #1a202c;
+    background-color: #ffffff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Cover Page */
+  .cover-page {
+    page-break-after: always;
+    height: 100vh;
+    min-height: 297mm;
+    background: linear-gradient(135deg, #090d16 0%, #0d1527 50%, #152238 100%);
+    color: #ffffff;
+    padding: 35mm 25mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover-accent-circle {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(99, 102, 241, 0.05) 50%, transparent 70%);
+    top: -150px;
+    right: -150px;
+    pointer-events: none;
+  }
+
+  .cover-accent-circle-2 {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.04) 50%, transparent 70%);
+    bottom: -100px;
+    left: -100px;
+    pointer-events: none;
+  }
+
+  .cover-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 9pt;
+    font-weight: 600;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    width: fit-content;
+  }
+
+  .cover-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 38pt;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-top: 20px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 50%, #93c5fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .cover-subtitle {
+    font-size: 14pt;
+    font-weight: 400;
+    line-height: 1.45;
+    color: #94a3b8;
+    max-width: 85%;
+    margin-bottom: 30px;
+  }
+
+  .cover-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+
+  .cover-tag {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: #e2e8f0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .cover-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px 24px;
+    border-radius: 12px;
+  }
+
+  .cover-meta-item h4 {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+
+  .cover-meta-item p {
+    font-size: 10pt;
+    font-weight: 600;
+    color: #f8fafc;
+  }
+
+  .cover-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8.5pt;
+    color: #64748b;
+  }
+
+  /* Document Body Typography */
+  .page-break {
+    page-break-after: always;
+  }
+
+  h1 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 18pt;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 2px solid #0284c7;
+    padding-bottom: 6px;
+    margin-top: 24px;
+    margin-bottom: 14px;
+    page-break-after: avoid;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  h1 .chapter-number {
+    background: #0284c7;
+    color: white;
+    font-size: 10pt;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+  }
+
+  h2 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #334155;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    page-break-after: avoid;
+  }
+
+  p {
+    margin-bottom: 10px;
+    text-align: justify;
+  }
+
+  ul, ol {
+    margin-left: 20px;
+    margin-bottom: 12px;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  strong {
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  /* Code & Syntax */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    background: #f1f5f9;
+    color: #0369a1;
+    padding: 1.5px 5px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+  }
+
+  pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.8pt;
+    line-height: 1.45;
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    page-break-inside: avoid;
+    border: 1px solid #334155;
+  }
+
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    border: none;
+    font-size: inherit;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+    font-size: 8.5pt;
+    page-break-inside: avoid;
+  }
+
+  th {
+    background: #0f172a;
+    color: #ffffff;
+    font-weight: 600;
+    text-align: left;
+    padding: 7px 10px;
+    border: 1px solid #1e293b;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  td {
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  /* Callouts & Alert Boxes */
+  .callout {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 9pt;
+    page-break-inside: avoid;
+    border-left: 4px solid;
+  }
+
+  .callout-info {
+    background: #f0f9ff;
+    border-color: #0284c7;
+    color: #0369a1;
+  }
+
+  .callout-info strong {
+    color: #0369a1;
+  }
+
+  .callout-success {
+    background: #f0fdf4;
+    border-color: #16a34a;
+    color: #15803d;
+  }
+
+  .callout-success strong {
+    color: #15803d;
+  }
+
+  .callout-warning {
+    background: #fffbeb;
+    border-color: #d97706;
+    color: #b45309;
+  }
+
+  .callout-warning strong {
+    color: #b45309;
+  }
+
+  .callout-danger {
+    background: #fef2f2;
+    border-color: #dc2626;
+    color: #b91c1c;
+  }
+
+  /* Architecture Box / Flowcharts */
+  .diagram-box {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 14px;
+    page-break-inside: avoid;
+  }
+
+  .diagram-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .badge-blue { background: #e0f2fe; color: #0369a1; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-purple { background: #f3e8ff; color: #7e22ce; }
+  .badge-amber { background: #fef3c7; color: #b45309; }
+
+  /* Feature Grid */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+    page-break-inside: avoid;
+  }
+
+  .feature-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .feature-card h4 {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .feature-card p {
+    font-size: 8.5pt;
+    color: #475569;
+    margin-bottom: 0;
+    line-height: 1.45;
+  }
+
+  /* Table of Contents */
+  .toc-list {
+    list-style: none;
+    margin-left: 0;
+  }
+
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 5px 0;
+    border-bottom: 1px dotted #cbd5e1;
+    font-size: 9.5pt;
+  }
+
+  .toc-title {
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .toc-dots {
+    flex-grow: 1;
+    border-bottom: 1px dotted #94a3b8;
+    margin: 0 8px;
+    position: relative;
+    top: -4px;
+  }
+
+  .toc-page {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5pt;
+    color: #0284c7;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+  <div class="cover-accent-circle"></div>
+  <div class="cover-accent-circle-2"></div>
+
+  <div>
+    <div class="cover-brand-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 13 2 2 4-4"/></svg>
+      CloudSage Architecture & Engineering Report
+    </div>
+    <div class="cover-title">CloudSage</div>
+    <div class="cover-subtitle">GenAI-Powered Cloud Operation, Telemetry Diagnostics, RAG Knowledge Retrieval & INR (₹) FinOps Intelligence Assistant</div>
+    
+    <div class="cover-tags">
+      <span class="cover-tag">FastAPI 0.115+</span>
+      <span class="cover-tag">AWS Boto3 SDK</span>
+      <span class="cover-tag">Tool-Calling LLM</span>
+      <span class="cover-tag">Deterministic RAG Engine</span>
+      <span class="cover-tag">Vector Cosine Index</span>
+      <span class="cover-tag">INR (₹) Localization</span>
+      <span class="cover-tag">Least-Privilege IAM</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="cover-meta-grid">
+      <div class="cover-meta-item">
+        <h4>System Version & Status</h4>
+        <p>v0.4.0 · Phase 4 Knowledge Engine Complete</p>
+      </div>
+      <div class="cover-meta-item">
+        <h4>Runtime Environment</h4>
+        <p>Python 3.11+ / Uvicorn / Boto3 / SQLite</p>
+      </div>
+      <div class="cover-meta-item">
+        <h4>LLM & Reasoning Engine</h4>
+        <p>OpenAI GPT-4o / Gemini 2.0 / Local Engine</p>
+      </div>
+      <div class="cover-meta-item">
+        <h4>Document Classification</h4>
+        <p>Comprehensive Engineering Reference</p>
+      </div>
+    </div>
+    
+    <div class="cover-footer">
+      <span>Generated for CloudSage Repository Review</span>
+      <span>Confidential & Proprietary Architecture Document</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="page-break">
+  <h1><span class="chapter-number">TOC</span> Table of Contents</h1>
+  <div class="callout callout-info">
+    This document provides an exhaustive, production-grade architectural and technical deep dive into <strong>CloudSage</strong>. It details the system design, agent tool-calling loops, deterministic RAG pipeline, AWS Boto3 integration, FinOps localization, security boundaries, and API specifications.
+  </div>
+
+  <ul class="toc-list">
+    <li class="toc-item"><span class="toc-title">1. Executive Overview & Problem Statement</span><span class="toc-dots"></span><span class="toc-page">Ch. 1</span></li>
+    <li class="toc-item"><span class="toc-title">2. System Architecture & High-Level Design</span><span class="toc-dots"></span><span class="toc-page">Ch. 2</span></li>
+    <li class="toc-item"><span class="toc-title">3. Autonomous GenAI Agent & Tool-Calling Router</span><span class="toc-dots"></span><span class="toc-page">Ch. 3</span></li>
+    <li class="toc-item"><span class="toc-title">4. Local RAG Knowledge Engine & Vector Store</span><span class="toc-dots"></span><span class="toc-page">Ch. 4</span></li>
+    <li class="toc-item"><span class="toc-title">5. AWS Integrations, Telemetry & Boto3 Wrappers</span><span class="toc-dots"></span><span class="toc-page">Ch. 5</span></li>
+    <li class="toc-item"><span class="toc-title">6. Currency Localization Engine & FinOps Intelligence</span><span class="toc-dots"></span><span class="toc-page">Ch. 6</span></li>
+    <li class="toc-item"><span class="toc-title">7. Complete REST API Reference & Data Contracts</span><span class="toc-dots"></span><span class="toc-page">Ch. 7</span></li>
+    <li class="toc-item"><span class="toc-title">8. Security Model, IAM Policies & Safety Guardrails</span><span class="toc-dots"></span><span class="toc-page">Ch. 8</span></li>
+    <li class="toc-item"><span class="toc-title">9. Frontend Dashboard & User Interface Architecture</span><span class="toc-dots"></span><span class="toc-page">Ch. 9</span></li>
+    <li class="toc-item"><span class="toc-title">10. Verification, Automated Test Suite & Local Setup</span><span class="toc-dots"></span><span class="toc-page">Ch. 10</span></li>
+    <li class="toc-item"><span class="toc-title">11. Project Roadmap & Future Enhancements</span><span class="toc-dots"></span><span class="toc-page">Ch. 11</span></li>
+  </ul>
+
+  <h2 style="margin-top: 25px;">Document Summary & Key Metrics</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4><span class="badge badge-blue">Core AI</span> Multi-Provider LLM & Local Engine</h4>
+      <p>Seamlessly routes between OpenAI GPT-4o-mini, Google Gemini, and a zero-dependency local deterministic intent engine.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="badge badge-green">AWS Observability</span> 5 Core Cloud Services</h4>
+      <p>STS caller verification, EC2 inventory, S3 bucket exploration, CloudWatch CPU telemetry, and Cost Explorer aggregations.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="badge badge-purple">Knowledge RAG</span> 10 Curated AWS Modules</h4>
+      <p>In-memory vector store with cosine ranking, semantic chunking (180 words, 40-word overlap), and verified URL citations.</p>
+    </div>
+    <div class="feature-card">
+      <h4><span class="badge badge-amber">FinOps & INR</span> Indian Currency Engine</h4>
+      <p>Automatic USD-to-INR conversion (₹85.0/$) with custom Indian digit grouping (Lakhs & Crores) across all telemetry and chats.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CHAPTER 1 -->
+<div class="page-break">
+  <h1><span class="chapter-number">01</span> Executive Overview & Problem Statement</h1>
+
+  <h2>1.1 The Cloud Complexity Challenge</h2>
+  <p>Modern enterprise cloud environments deployed on Amazon Web Services (AWS) consist of thousands of disparate resources: compute instances across multiple availability zones, scalable object storage buckets, distributed CloudWatch monitoring alarms, and multi-tier billing dimensions. Cloud administrators, DevOps engineers, and FinOps analysts face significant operational friction:</p>
+  <ul>
+    <li><strong>Console Overload:</strong> Navigating dozens of AWS Management Console screens to correlate an EC2 instance's status with its CloudWatch CPU telemetry and historical cost driver is slow and error-prone.</li>
+    <li><strong>CLI Overhead:</strong> Running complex, one-off AWS CLI commands with cumbersome JMESPath filters requires deep syntax recall and introduces context-switching.</li>
+    <li><strong>Knowledge Fragmentation:</strong> Answering architectural and troubleshooting questions (e.g., <em>"Why is my burstable T3 instance pegged at 100% CPU?"</em> or <em>"How do S3 lifecycle transitions work?"</em>) requires separate searches through external AWS documentation.</li>
+    <li><strong>Currency Mismatch for Indian Teams:</strong> Standard AWS billing is denominated strictly in USD, forcing Indian cloud engineers and financial decision-makers to manually convert exchange rates and re-format numbers into lakhs and crores.</li>
+  </ul>
+
+  <h2>1.2 The CloudSage Solution</h2>
+  <p><strong>CloudSage</strong> is an intelligent, local, GenAI-powered cloud operations and FinOps assistant. Operating directly on the engineer's workstation or internal enterprise server, CloudSage bridges the gap between natural language questions and concrete AWS infrastructure telemetry:</p>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4>🤖 Natural Language Cloud Operations</h4>
+      <p>Inspect EC2 instances, list S3 buckets, analyze CloudWatch CPU utilization, and break down cloud spend using conversational prompts.</p>
+    </div>
+    <div class="feature-card">
+      <h4>📚 Grounded RAG Knowledge Base</h4>
+      <p>Instantly answers AWS conceptual, architectural, and troubleshooting questions with verified source citations from official documentation.</p>
+    </div>
+    <div class="feature-card">
+      <h4>💰 Native INR (₹) FinOps Intelligence</h4>
+      <p>All cost analyses and service breakdowns are presented in Indian Rupees using proper Indian number formatting (e.g., <code>₹40,995.50</code>).</p>
+    </div>
+    <div class="feature-card">
+      <h4>🛡️ Strict Read-Only Security Model</h4>
+      <p>CloudSage is architected with zero write or destructive capabilities, operates under least-privilege IAM policies, and binds strictly to local loopback.</p>
+    </div>
+  </div>
+
+  <h2>1.3 Target Personas & Use Cases</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Persona</th>
+        <th>Primary Pain Point</th>
+        <th>CloudSage Value Proposition</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>DevOps / SRE Engineer</strong></td>
+        <td>Slow correlation of EC2 health and CloudWatch telemetry during incidents.</td>
+        <td>One-shot queries like <em>"Which EC2 instances are running and what is their CPU?"</em> trigger automated multi-tool analysis.</td>
+      </tr>
+      <tr>
+        <td><strong>FinOps / Finance Lead</strong></td>
+        <td>AWS bills are shown in USD with opaque service categories.</td>
+        <td>Immediate spend breakdown in INR (₹) with top cost drivers identified and rightsizing tips provided.</td>
+      </tr>
+      <tr>
+        <td><strong>Cloud Architect</strong></td>
+        <td>Need quick, authoritative answers to best-practice questions.</td>
+        <td>Local RAG engine answers architecture and security queries citing AWS Well-Architected Framework guidelines.</td>
+      </tr>
+      <tr>
+        <td><strong>Junior Developer</strong></td>
+        <td>Intimidated by AWS IAM policies and complex console interfaces.</td>
+        <td>Conversational interface with built-in safe mock mode for learning without incurring cloud costs.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- CHAPTER 2 -->
+<div class="page-break">
+  <h1><span class="chapter-number">02</span> System Architecture & High-Level Design</h1>
+
+  <h2>2.1 Architectural Overview</h2>
+  <p>CloudSage employs a decoupled, multi-tier architecture separating the user presentation layer, the FastAPI REST application layer, the GenAI Agent orchestrator, the operational Tool Router, the deterministic RAG Knowledge Engine, and the underlying AWS Boto3 SDK service integration.</p>
+
+  <div class="diagram-box">
+    <div class="diagram-title">CloudSage End-to-End Component Architecture</div>
+    <pre><code>┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 PRESENTATION TIER                                      │
+│   Modern Glassmorphic Web Dashboard (HTML5 / Vanilla CSS3 / Modern ES6 JavaScript)      │
+│   • Multi-Turn Chat Feed   • Live Telemetry Cards   • RAG Source Chips   • INR Charts  │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ HTTP JSON Requests (CORS Enabled)
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                FASTAPI APPLICATION TIER                                │
+│   app.main / FastAPI 0.115+ (Lifespan Context Manager, Pydantic V2 Schemas)            │
+│   ├── /health & /api/health       ──► Server diagnostic & runtime mode                 │
+│   ├── /api/aws/*                  ──► Direct telemetry endpoints (EC2, S3, CW, Cost)   │
+│   ├── /api/chat & /api/chat/reset ──► Multi-turn conversational GenAI assistant        │
+│   └── /api/rag/*                  ──► Direct semantic vector search & knowledge query  │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+                    ┌───────────────────────┴───────────────────────┐
+                    ▼                                               ▼
+┌───────────────────────────────────────┐       ┌───────────────────────────────────────┐
+│       CLOUDSAGE AGENT ORCHESTRATOR    │       │        RAG KNOWLEDGE ENGINE           │
+│       (app/ai/agent.py)               │       │        (app/rag/pipeline.py)          │
+│  • In-Memory Session Memory Store     │       │  • Curated AWS Documents (10 modules) │
+│  • Context Window Pruning (10 msgs)   │       │  • Semantic Chunker (180w / 40w olap) │
+│  • Intent Classification Dispatch     │       │  • LocalSemanticEmbeddings (384-dim)  │
+│  • Hybrid Telemetry + Knowledge Blend │       │  • VectorStore (Cosine Similarity)    │
+│  • Final Answer Grounded Synthesis    │       │  • Ingestion Pipeline (Atomic JSON)   │
+└───────────────────┬───────────────────┘       └───────────────────┬───────────────────┘
+                    │                                               │
+                    ▼                                               ▼
+┌───────────────────────────────────────┐       ┌───────────────────────────────────────┐
+│          AWS TOOL ROUTER              │       │          LLM PROVIDER ENGINE          │
+│       (app/ai/tool_router.py)         │       │          (app/ai/llm.py)              │
+│  ├── inspect_ec2                      │       │  • OpenAI (GPT-4o-mini Function Call) │
+│  ├── explore_s3                       │       │  • Google Gemini (1.5/2.0 Flash)      │
+│  ├── get_cloudwatch_metrics           │       │  • Deterministic Local Intent Engine  │
+│  └── analyze_cloud_cost               │       │  • System Prompt Directives           │
+└───────────────────┬───────────────────┘       └───────────────────────────────────────┘
+                    │
+         ┌──────────┴──────────┐
+         │                     │
+AWS_MOCK_MODE=false   AWS_MOCK_MODE=true
+         ▼                     ▼
+┌─────────────────┐   ┌─────────────────┐
+│ Real AWS Boto3  │   │ High-Fidelity   │
+│ • STS / EC2     │   │ Realistic Mock  │
+│ • S3 / CW / CE  │   │ Offline Store   │
+└─────────────────┘   └─────────────────┘</code></pre>
+  </div>
+
+  <h2>2.2 Core Codebase Directory Structure</h2>
+  <p>The repository follows strict separation of concerns across operational tools, AI reasoning, RAG indexing, REST controllers, and UI assets:</p>
+
+  <pre><code>cloudsage-main/
+├── app/
+│   ├── __init__.py               # Package declaration
+│   ├── main.py                   # FastAPI app, Lifespan context, router mounts, static files
+│   ├── config.py                 # Pydantic BaseSettings, .env loader, INR defaults
+│   ├── ai/                       # GenAI Agent & Reasoning Layer
+│   │   ├── agent.py              # CloudSageAgent: session tracking, tool execution, hybrid synthesis
+│   │   ├── llm.py                # Multi-provider client (OpenAI, Gemini, Local deterministic engine)
+│   │   ├── tool_router.py        # Tool definitions, schemas, and Boto3/Mock execution router
+│   │   ├── mock_data.py          # Realistic offline AWS telemetry datasets
+│   │   └── prompts.py            # System prompts, FinOps directives, 10 strict operating rules
+│   ├── rag/                      # Retrieval-Augmented Generation (RAG) Subsystem
+│   │   ├── documents.py          # Curated authoritative AWS documentation dataset (EC2, S3, CW, IAM, FinOps)
+│   │   ├── chunker.py            # DocumentChunker: paragraph-aware splitting with 40-word overlap
+│   │   ├── embeddings.py         # LocalSemanticEmbeddings (384-dim subword MD5) & OpenAI embeddings
+│   │   ├── vector_store.py       # In-memory cosine similarity search and index.json serializer
+│   │   ├── retriever.py          # KnowledgeRetriever: query vectorization & top-K chunk ranking
+│   │   ├── pipeline.py           # RAGPipeline: Retrieve -> Ground -> Cite workflow
+│   │   └── ingest.py             # CLI ingestion pipeline (`python -m app.rag.ingest`)
+│   ├── routes/                   # HTTP REST Endpoints
+│   │   ├── health.py             # GET /health and GET /api/health
+│   │   ├── aws.py                # GET /api/aws/status, /ec2/instances, /s3/buckets, /cloudwatch/*, /cost/*
+│   │   ├── chat.py               # POST /api/chat and POST /api/chat/reset
+│   │   └── rag.py                # GET /api/rag/search and POST /api/rag/query
+│   ├── services/                 # Cross-Cutting Infrastructure Services
+│   │   ├── aws_session.py        # Boto3 session management, STS caller identity, error masking
+│   │   └── currency.py           # USD to INR conversion, Indian comma grouping (₹40,995.50)
+│   └── tools/                    # AWS Boto3 Operational Client Wrappers
+│       ├── ec2.py                # describe_instances wrapper with tag & state parsing
+│       ├── s3.py                 # list_buckets wrapper (zero object downloading)
+│       ├── cloudwatch.py         # get_metric_statistics CPU utilization extractor
+│       └── cost_explorer.py      # get_cost_and_usage spend aggregator
+├── frontend/                     # Modern Web Dashboard
+│   ├── index.html                # Single-page interface, telemetry cards, chat stream
+│   ├── css/style.css             # Glassmorphic dark/light UI, responsive grid, custom scrollbars
+│   └── js/app.js                 # Event listeners, auto-refresh telemetry, markdown parser, citation chips
+├── tests/                        # Automated Pytest Suite
+│   ├── test_health.py            # Server health diagnostics
+│   ├── test_aws.py               # Boto3 wrappers, mock modes, schema validation
+│   ├── test_chat.py              # Agent tool dispatch, multi-turn memory, session reset
+│   ├── test_rag.py               # Vector search, cosine ranking, chunking, source citations
+│   └── test_currency.py          # INR conversion rates, Indian number grouping
+├── data/                         # Persistent Storage (SQLite & Vector Index)
+│   └── vector_store/index.json   # Serialized knowledge vectors and metadata
+├── requirements.txt              # Production dependencies
+└── README.md                     # Comprehensive project guide</code></pre>
+</div>
+
+<!-- CHAPTER 3 -->
+<div class="page-break">
+  <h1><span class="chapter-number">03</span> Autonomous GenAI Agent & Tool-Calling Router</h1>
+
+  <h2>3.1 The CloudSage Agent Workflow</h2>
+  <p>The <code>CloudSageAgent</code> (defined in <code>app/ai/agent.py</code>) orchestrates the multi-turn conversational lifecycle. When a user submits a prompt, the agent executes a 5-stage pipeline:</p>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Agent Request Processing Lifecycle</div>
+    <pre><code> User Prompt ──► [1. Session Retrieval] ──► [2. LLM Tool & RAG Evaluation]
+                                                      │
+                       ┌──────────────────────────────┼──────────────────────────────┐
+                       ▼                              ▼                              ▼
+             [Case A: Pure RAG]             [Case B: Direct Chat]          [Case C: Operational Tools]
+                       │                              │                              │
+             KnowledgeRetriever             Direct LLM Reply               ToolRouter Execution
+             (Vector Cosine Search)                   │                    (Boto3 / Mock Data)
+                       │                              │                              │
+                       │                              │                    (Optional Hybrid RAG)
+                       ▼                              ▼                              ▼
+             [Grounded Citations]                     │                    [Final Synthesis with ₹]
+                       │                              │                              │
+                       └──────────────────────────────┼──────────────────────────────┘
+                                                      │
+                                                      ▼
+                                            [3. Memory Update] ──► Return JSON to UI</code></pre>
+  </div>
+
+  <h2>3.2 LLM Provider Abstraction & Seamless Fallback</h2>
+  <p>The <code>LLMClient</code> in <code>app/ai/llm.py</code> provides a vendor-neutral interface supporting three execution backends:</p>
+  <ol>
+    <li><strong>OpenAI (<code>gpt-4o-mini</code>):</strong> Utilizes OpenAI's native function-calling API. Tool definitions are passed via JSON schema. If tool calls are requested, the agent executes them and feeds results back into OpenAI for synthesis.</li>
+    <li><strong>Google Gemini (<code>gemini-1.5-flash</code> / <code>gemini-2.0-flash</code>):</strong> Leverages Google's tool-declaration API for automated function dispatch.</li>
+    <li><strong>Local Deterministic Intent Engine:</strong> A built-in, regex- and keyword-driven classification engine that provides immediate, zero-latency tool selection and synthesis offline without third-party API keys.</li>
+  </ol>
+
+  <div class="callout callout-success">
+    <strong>Zero-Failure Fallback Guarantee:</strong> If an OpenAI or Gemini API call fails due to invalid API keys, rate limits, or network timeouts, <code>LLMClient</code> catches the exception and automatically falls back to the Local Deterministic Engine, ensuring uninterrupted operation.
+  </div>
+
+  <h2>3.3 Operational AI Tool Schemas</h2>
+  <p>The Tool Router exposes four core operational tools adhering to OpenAI function calling specifications:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Tool Name</th>
+        <th>Module</th>
+        <th>Input Parameters</th>
+        <th>Output Data Contract</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>inspect_ec2</code></td>
+        <td><code>app.tools.ec2</code></td>
+        <td><em>None</em></td>
+        <td>Instance IDs, Name tags, states (running/stopped), types, private/public IPs, launch times, and AZs.</td>
+      </tr>
+      <tr>
+        <td><code>explore_s3</code></td>
+        <td><code>app.tools.s3</code></td>
+        <td><em>None</em></td>
+        <td>List of S3 bucket names and ISO-8601 creation timestamps. Zero object downloads.</td>
+      </tr>
+      <tr>
+        <td><code>get_cloudwatch_metrics</code></td>
+        <td><code>app.tools.cloudwatch</code></td>
+        <td><code>instance_id</code> (str)<br><code>hours</code> (int, default 1)</td>
+        <td>Chronological datapoints, Average CPU %, Maximum peak spike %, Minimum %, and unit.</td>
+      </tr>
+      <tr>
+        <td><code>analyze_cloud_cost</code></td>
+        <td><code>app.tools.cost_explorer</code></td>
+        <td><code>days</code> (int, default 30)</td>
+        <td>Total spend in INR (₹), start/end dates, top cost driver, and service breakdown list with percentages.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3.4 Multi-Turn Session Memory & Contextual Pronoun Resolution</h2>
+  <p>The agent maintains an in-memory session store indexed by UUID. It stores conversation history (pruned to the last 10 messages for token efficiency) and context state variables (<code>last_instance_id</code>, <code>instances</code>, <code>last_tool</code>). This enables natural, contextual follow-up interactions:</p>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Multi-Turn Pronoun Resolution Example</div>
+    <pre><code>Turn 1: User asks "What EC2 instances are currently running?"
+  ├─ Agent calls `inspect_ec2`
+  ├─ Tool returns instances: `i-03fa78bc91204d8ef` (web-prod-01), `i-09b62a488e1709c31` (api-prod-02)
+  └─ Agent persists `last_instance_id = "i-03fa78bc91204d8ef"` in session context.
+
+Turn 2: User asks "What is its CPU utilization?"
+  ├─ Local Reasoning Engine detects contextual pronoun "its"
+  ├─ Agent retrieves `last_instance_id` ("i-03fa78bc91204d8ef") from session memory
+  ├─ Agent calls `get_cloudwatch_metrics(instance_id="i-03fa78bc91204d8ef", hours=1)`
+  └─ Synthesizes answer: "Instance i-03fa78bc91204d8ef (web-prod-01) has an average CPU utilization of 4.2%..."</code></pre>
+  </div>
+</div>
+
+<!-- CHAPTER 4 -->
+<div class="page-break">
+  <h1><span class="chapter-number">04</span> Local RAG Knowledge Engine & Vector Store</h1>
+
+  <h2>4.1 RAG Architecture & Design Principles</h2>
+  <p>CloudSage incorporates a locally runnable <strong>Retrieval-Augmented Generation (RAG)</strong> knowledge system. Rather than relying on static LLM pre-training weights (which may hallucinate outdated cloud limits or non-existent configuration flags), CloudSage grounds conceptual responses in curated, authoritative AWS documentation with verified URL citations.</p>
+
+  <div class="diagram-box">
+    <div class="diagram-title">RAG Ingestion and Semantic Retrieval Pipeline</div>
+    <pre><code>  Curated AWS Docs (10 Modules)
+              │
+              ▼
+  DocumentChunker (Paragraph-aware, 180 words, 40-word overlap)
+              │
+              ▼
+  LocalSemanticEmbeddings (384-dimensional subword MD5 projection)
+              │
+              ▼
+  VectorStore Indexing ──► Serialized to ./data/vector_store/index.json
+              │
+  User Query ─┼─► Vectorize Query ──► Cosine Similarity Match ──► Top-3 Chunks
+                                                                        │
+                                                                        ▼
+                                                        Grounded Synthesis + Citations</code></pre>
+  </div>
+
+  <h2>4.2 Curated Knowledge Base Taxonomy</h2>
+  <p>The knowledge dataset in <code>app/rag/documents.py</code> includes 10 authoritative modules covering core AWS domains:</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Document Title & ID</th>
+        <th>Core Concepts Covered</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>EC2</strong></td>
+        <td><code>doc_ec2_basics</code><br>Fundamentals & Architecture</td>
+        <td>AMIs, instance types, EBS volumes, Key Pairs, Security Groups, Availability Zones, purchasing models.</td>
+      </tr>
+      <tr>
+        <td><strong>EC2</strong></td>
+        <td><code>doc_ec2_instance_types</code><br>Types and Families</td>
+        <td>General Purpose (T3, M6i), Compute Optimized (C6i), Memory Optimized (R6i), Storage Optimized (I3), GPUs (G5).</td>
+      </tr>
+      <tr>
+        <td><strong>EC2</strong></td>
+        <td><code>doc_ec2_security_groups</code><br>Security Groups vs NACLs</td>
+        <td>Stateful firewall rules, default deny, allow-only specifications, port mapping, subnet-level stateless NACLs.</td>
+      </tr>
+      <tr>
+        <td><strong>EC2</strong></td>
+        <td><code>doc_ec2_availability_zones</code><br>Regions & High Availability</td>
+        <td>Geographic isolation, ultra-low latency fiber links, Multi-AZ deployments, Elastic Load Balancing.</td>
+      </tr>
+      <tr>
+        <td><strong>EC2</strong></td>
+        <td><code>doc_ec2_cpu_troubleshooting</code><br>High CPU & Troubleshooting</td>
+        <td>Runaway threads, burstable CPU credit depletion on T2/T3, Auto Scaling groups, vertical rightsizing.</td>
+      </tr>
+      <tr>
+        <td><strong>S3</strong></td>
+        <td><code>doc_s3_basics</code><br>Object Storage Fundamentals</td>
+        <td>Buckets, object keys, flat prefix namespaces, 11 9's durability (99.999999999%), multi-AZ replication.</td>
+      </tr>
+      <tr>
+        <td><strong>S3</strong></td>
+        <td><code>doc_s3_storage_classes</code><br>Storage Classes & Tiering</td>
+        <td>S3 Standard, Intelligent-Tiering, Standard-IA, One Zone-IA, Glacier Instant/Flexible, Glacier Deep Archive.</td>
+      </tr>
+      <tr>
+        <td><strong>S3</strong></td>
+        <td><code>doc_s3_lifecycle_policies</code><br>Lifecycle Cost Optimization</td>
+        <td>Transition actions, automated expiration actions, multipart upload cleanup, noncurrent version expiration.</td>
+      </tr>
+      <tr>
+        <td><strong>CloudWatch</strong></td>
+        <td><code>doc_cloudwatch_fundamentals</code><br>Telemetry & Metrics</td>
+        <td>Metrics, dimensions, periods, statistics (Avg, Max, p99), Basic vs Detailed 1-minute monitoring.</td>
+      </tr>
+      <tr>
+        <td><strong>CloudWatch</strong></td>
+        <td><code>doc_cloudwatch_alarms</code><br>Alarms & Auto-Remediation</td>
+        <td>Alarm states (OK, ALARM, INSUFFICIENT_DATA), SNS notifications, EC2 Auto Scaling, reboot actions.</td>
+      </tr>
+      <tr>
+        <td><strong>IAM</strong></td>
+        <td><code>doc_iam_least_privilege</code><br>IAM Policies & Security</td>
+        <td>Principle of Least Privilege, Users, Groups, STS Roles, JSON policy structure, default deny evaluation logic.</td>
+      </tr>
+      <tr>
+        <td><strong>FinOps</strong></td>
+        <td><code>doc_cost_optimization</code><br>FinOps Strategies</td>
+        <td>Compute rightsizing, idle resource scheduling, Savings Plans/RIs (up to 72% savings), unattached EBS volume deletion.</td>
+      </tr>
+      <tr>
+        <td><strong>FinOps</strong></td>
+        <td><code>doc_cost_explorer_guide</code><br>Cost Explorer Analysis</td>
+        <td>Historical/forecasted spend, unblended rates, service breakdown, cost allocation tags, anomaly detection.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4.3 Deterministic Local Semantic Embeddings Engine</h2>
+  <p>To eliminate heavy PyTorch/TensorFlow dependencies, GPU requirements, or paid embedding API calls, CloudSage implements <code>LocalSemanticEmbeddings</code> in <code>app/rag/embeddings.py</code>:</p>
+  <ul>
+    <li><strong>Subword N-Gram Hashing:</strong> Tokenizes text and extracts word tokens (weight = 1.5) and character 3-grams (weight = 0.5) to capture semantic prefixes and suffixes.</li>
+    <li><strong>Dual-Bucket MD5 Projection:</strong> Hashes each feature using MD5 into two distinct 384-dimensional projection indices with alternating signs to minimize hash collisions.</li>
+    <li><strong>L2 Normalization:</strong> Normalizes the resulting 384-dimensional dense vector to unit length ($\|v\|_2 = 1.0$), ensuring that the dot product directly equals the cosine similarity.</li>
+    <li><strong>Performance:</strong> Generates embeddings in less than <strong>0.5 milliseconds per chunk</strong> with zero network overhead.</li>
+  </ul>
+
+  <h2>4.4 Vector Store & Cosine Similarity Ranking</h2>
+  <p>The <code>VectorStore</code> (<code>app/rag/vector_store.py</code>) manages indexed vectors in memory and serializes them to <code>./data/vector_store/index.json</code>. The similarity between query vector $Q$ and document vector $D$ is calculated as:</p>
+  $$\text{Cosine Similarity}(Q, D) = \frac{\sum_{i=1}^{n} Q_i \cdot D_i}{\sqrt{\sum_{i=1}^{n} Q_i^2} \cdot \sqrt{\sum_{i=1}^{n} D_i^2}}$$
+  <p>Results above a minimum score threshold (default 0.05) are sorted in descending order, and the top-K chunks are passed to the synthesizer with metadata (source title, category, and URL).</p>
+</div>
+
+<!-- CHAPTER 5 -->
+<div class="page-break">
+  <h1><span class="chapter-number">05</span> AWS Integrations, Telemetry & Boto3 Wrappers</h1>
+
+  <h2>5.1 AWS Session & Credential Resolution</h2>
+  <p>The <code>app/services/aws_session.py</code> module manages AWS authentication using the standard Boto3 credential resolution chain:</p>
+  <ol>
+    <li>Explicit parameters passed in <code>.env</code> (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>AWS_SESSION_TOKEN</code>).</li>
+    <li>Environment variables set in the host OS shell.</li>
+    <li>Shared AWS credential and config files (<code>~/.aws/credentials</code> and <code>~/.aws/config</code>).</li>
+    <li>AWS Single Sign-On (AWS SSO) token cache.</li>
+    <li>IAM Roles attached to EC2 instances or ECS/EKS task execution roles.</li>
+  </ol>
+
+  <h2>5.2 Boto3 Operational Client Wrappers</h2>
+  <p>All operational tools strictly wrap read-only AWS APIs and handle error masking and pagination gracefully:</p>
+
+  <h3>1. EC2 Instance Inventory (<code>app/tools/ec2.py</code>)</h3>
+  <p>Invokes <code>ec2.describe_instances()</code> to discover all virtual machines in the configured region. It iterates over Reservations and Instances, extracting instance IDs, types, running states (<code>running</code>, <code>stopped</code>, <code>pending</code>), availability zones, private IPs, public IPs, launch times, and the <code>Name</code> tag from the tags list.</p>
+
+  <h3>2. S3 Bucket Inventory (<code>app/tools/s3.py</code>)</h3>
+  <p>Invokes <code>s3.list_buckets()</code> to enumerate all buckets in the account along with their creation timestamps. <em>Safety Guarantee:</em> The tool never calls <code>GetObject</code>, <code>ListObjectsV2</code>, or any data-plane API, ensuring zero access to sensitive object contents.</p>
+
+  <h3>3. CloudWatch Telemetry Extractor (<code>app/tools/cloudwatch.py</code>)</h3>
+  <p>Invokes <code>cloudwatch.get_metric_statistics()</code> for the <code>AWS/EC2</code> namespace with the metric <code>CPUUtilization</code>. It queries over a configurable time window (default 1 hour, up to 168 hours) with a 300-second period, aggregating <code>Average</code>, <code>Maximum</code>, and <code>Minimum</code> statistics. It sorts datapoints chronologically and computes the overall average and peak spike percentage.</p>
+
+  <h3>4. AWS Cost Explorer Spend Aggregator (<code>app/tools/cost_explorer.py</code>)</h3>
+  <p>Invokes <code>ce.get_cost_and_usage()</code> with <code>Granularity='MONTHLY'</code> and metric <code>UnblendedCost</code>, grouped by <code>DIMENSION: SERVICE</code>. It sums unblended costs across all active services, calculates percentage contributions, identifies the top cost driver, and passes the result to the currency engine for INR localization.</p>
+
+  <h2>5.3 Development Mock Mode</h2>
+  <p>When <code>AWS_MOCK_MODE=true</code> (or when AWS credentials are absent), CloudSage activates its built-in realistic mock provider (<code>app/ai/mock_data.py</code>). This enables full end-to-end testing of the agent, RAG pipeline, and UI without live AWS connectivity.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Telemetry Domain</th>
+        <th>Mock Data Content</th>
+        <th>Simulated Conditions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>STS Caller Identity</strong></td>
+        <td>Account: <code>123456789012</code>, ARN: <code>arn:aws:iam::123456789012:user/cloudsage-admin</code></td>
+        <td>Simulates authenticated admin identity in <code>us-east-1</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>EC2 Instances</strong></td>
+        <td><code>web-prod-01</code> (t3.medium, running), <code>api-prod-02</code> (t3.large, running), <code>worker-batch-03</code> (c6i.xlarge, stopped)</td>
+        <td>Multi-AZ distribution across <code>us-east-1a</code>, <code>us-east-1b</code>, <code>us-east-1c</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>S3 Buckets</strong></td>
+        <td><code>cloudsage-data-lake-prod</code>, <code>cloudsage-app-backups</code>, <code>cloudsage-frontend-assets</code></td>
+        <td>Varying creation dates from 2025 and 2026.</td>
+      </tr>
+      <tr>
+        <td><strong>CloudWatch CPU</strong></td>
+        <td>12 five-minute interval datapoints ranging from 2.1% to 18.5% (Average: 4.2%)</td>
+        <td>Simulates typical healthy web tier with minor periodic traffic spikes.</td>
+      </tr>
+      <tr>
+        <td><strong>Cost Explorer</strong></td>
+        <td>Total: $482.30 USD (Converted to ₹40,995.50 INR). Top driver: EC2 (51.2%).</td>
+        <td>4-service breakdown: EC2, RDS, S3, and CloudWatch.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- CHAPTER 6 -->
+<div class="page-break">
+  <h1><span class="chapter-number">06</span> Currency Localization Engine & FinOps Intelligence</h1>
+
+  <h2>6.1 Motivation for Native INR (₹) Formatting</h2>
+  <p>For cloud engineering and FinOps teams in India, analyzing cloud bills in raw USD introduces cognitive friction. Standard International number formatting (grouping every 3 digits, e.g., <code>100,000,000</code>) differs significantly from the Indian numbering system (grouping in Hundreds, Thousands, Lakhs, and Crores, e.g., <code>10,00,00,000</code>). CloudSage provides a dedicated currency engine (<code>app/services/currency.py</code>) to standardize all financial telemetry.</p>
+
+  <h2>6.2 The Indian Number Formatting Algorithm</h2>
+  <p>The <code>format_inr</code> function implements the formal Indian digit grouping algorithm:</p>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Indian Number System Grouping Rules</div>
+    <pre><code>Input Amount: 14250000.75
+  1. Separate Integer ('14250000') and Decimal ('75') parts.
+  2. Extract last 3 digits: '000' (Hundreds).
+  3. Group remaining digits ('14250') in pairs of 2 from right to left: ['1', '42', '50'].
+  4. Combine with commas: "1,42,50,000"
+  5. Append currency symbol and decimal: "₹1,42,50,000.75" (One Crore Forty-Two Lakh Fifty Thousand)</code></pre>
+  </div>
+
+  <h2>6.3 Currency Engine Function Reference</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Function</th>
+        <th>Input Parameters</th>
+        <th>Output Example</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>convert_usd_to_inr</code></td>
+        <td><code>amount_usd=482.30</code>, <code>rate=85.0</code></td>
+        <td><code>40995.50</code> (float)</td>
+        <td>Multiplies USD amount by exchange rate and rounds to 2 decimal places.</td>
+      </tr>
+      <tr>
+        <td><code>format_inr</code></td>
+        <td><code>amount=40995.50</code>, <code>symbol=True</code></td>
+        <td><code>"₹40,995.50"</code> (str)</td>
+        <td>Applies Indian comma grouping and prefixes the <code>₹</code> symbol.</td>
+      </tr>
+      <tr>
+        <td><code>convert_and_format_cost</code></td>
+        <td><code>amount_usd=245.10</code>, <code>rate=85.0</code></td>
+        <td><code>"₹20,833.50"</code> (str)</td>
+        <td>Composite helper executing conversion and Indian formatting in one step.</td>
+      </tr>
+      <tr>
+        <td><code>convert_cost_summary</code></td>
+        <td><code>cost_data</code> (dict), <code>rate=85.0</code></td>
+        <td>Converted summary dict</td>
+        <td>Converts total cost and all individual service breakdown lines to INR.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>6.4 FinOps Intelligence & Rightsizing Directives</h2>
+  <p>When users inquire about cloud spending, the agent incorporates 6 core FinOps optimization strategies into its response:</p>
+  <ul>
+    <li><strong>Compute Rightsizing:</strong> Identifies instances with average CPU below 10% and recommends downsizing (e.g., migrating from <code>t3.large</code> to <code>t3.small</code> saves ~50%).</li>
+    <li><strong>Idle Resource Scheduling:</strong> Automated shut-off for non-production development environments outside business hours saves ~65% on EC2 compute.</li>
+    <li><strong>Commitment Discounts:</strong> Recommends 1-year or 3-year Savings Plans and Reserved Instances for steady-state workloads (up to 72% discount).</li>
+    <li><strong>S3 Storage Lifecycle Optimization:</strong> Transitioning data from S3 Standard to S3 Intelligent-Tiering or Glacier saves between 50% and 95% on storage costs.</li>
+    <li><strong>Unattached Resource Cleanup:</strong> Detecting unattached EBS volumes, obsolete EBS snapshots, and idle Elastic IPs.</li>
+  </ul>
+</div>
+
+<!-- CHAPTER 7 -->
+<div class="page-break">
+  <h1><span class="chapter-number">07</span> Complete REST API Reference & Data Contracts</h1>
+
+  <h2>7.1 API Overview & Swagger Documentation</h2>
+  <p>CloudSage exposes a clean REST API built on FastAPI. Interactive Swagger UI is available at <code>http://127.0.0.1:8000/docs</code>, and ReDoc documentation is available at <code>/redoc</code>.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>HTTP Method</th>
+        <th>Endpoint Path</th>
+        <th>Tag</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/health</code> & <code>/api/health</code></td>
+        <td>Health</td>
+        <td>Application health, version, environment, and debug status.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/aws/status</code></td>
+        <td>AWS</td>
+        <td>STS identity verification, account ID, and region connectivity.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/aws/ec2/instances</code></td>
+        <td>AWS</td>
+        <td>List all EC2 instances, states, types, IPs, and Name tags.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/aws/s3/buckets</code></td>
+        <td>AWS</td>
+        <td>List all S3 storage buckets with creation timestamps.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/aws/cloudwatch/ec2/{id}/cpu</code></td>
+        <td>AWS</td>
+        <td>CPU utilization telemetry for instance ID over lookback hours.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/aws/cost/summary</code></td>
+        <td>AWS</td>
+        <td>Cost Explorer spend breakdown in USD and INR.</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td>
+        <td><code>/api/chat</code></td>
+        <td>Chat</td>
+        <td>Primary multi-turn conversational GenAI assistant endpoint.</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td>
+        <td><code>/api/chat/reset</code></td>
+        <td>Chat</td>
+        <td>Clears conversation memory for a specified session ID.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/rag/search</code></td>
+        <td>RAG</td>
+        <td>Direct semantic vector search against AWS knowledge base.</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td>
+        <td><code>/api/rag/query</code></td>
+        <td>RAG</td>
+        <td>Grounded question-answering with official documentation citations.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>7.2 Request & Response Data Contracts</h2>
+
+  <h3>1. Primary Chat Endpoint: <code>POST /api/chat</code></h3>
+  <p><strong>Request Payload:</strong></p>
+  <pre><code>{
+  "message": "What EC2 instances are currently running and what is their CPU utilization?",
+  "session_id": "3f678287-2178-433b-826d-317424683a37"
+}</code></pre>
+
+  <p><strong>Response Payload:</strong></p>
+  <pre><code>{
+  "answer": "### 🖥️ EC2 Instances & Telemetry Overview (us-east-1)\n\nFound **3 instance(s)** (2 running, 1 stopped):\n- **i-03fa78bc91204d8ef** (`web-prod-01`): RUNNING • Type: `t3.medium`\n- **i-09b62a488e1709c31** (`api-prod-02`): RUNNING • Type: `t3.large`\n- **i-07e155bc90082a17f** (`worker-batch-03`): STOPPED • Type: `c6i.xlarge`\n\n### 📈 CPU Utilization (web-prod-01)\n- **Average CPU:** 4.2%\n- **Peak Spike:** 18.5%\n- **Health Status:** Healthy (Well within baseline limits)\n\n> ℹ️ *Development mock data is being used because AWS is not connected.*",
+  "tools_used": ["inspect_ec2", "get_cloudwatch_metrics"],
+  "data_source": "mock",
+  "sources": [],
+  "retrieval_used": false,
+  "session_id": "3f678287-2178-433b-826d-317424683a37",
+  "tool_results": [...]
+}</code></pre>
+
+  <h3>2. RAG Knowledge Search Endpoint: <code>GET /api/rag/search?q=security+group&top_k=1</code></h3>
+  <p><strong>Response Payload:</strong></p>
+  <pre><code>{
+  "query": "security group",
+  "count": 1,
+  "results": [
+    {
+      "chunk_id": "doc_ec2_security_groups_chunk_0",
+      "document_id": "doc_ec2_security_groups",
+      "title": "EC2 Security Groups and Network Access Rules",
+      "category": "EC2",
+      "source": "AWS Documentation — Amazon EC2 Security Groups",
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html",
+      "score": 0.5445,
+      "content": "An Amazon EC2 security group acts as a virtual, stateful firewall for your EC2 instances to control incoming and outgoing network traffic..."
+    }
+  ]
+}</code></pre>
+</div>
+
+<!-- CHAPTER 8 -->
+<div class="page-break">
+  <h1><span class="chapter-number">08</span> Security Model, IAM Policies & Safety Guardrails</h1>
+
+  <h2>8.1 Least-Privilege IAM Policy</h2>
+  <p>CloudSage enforces a strict least-privilege security posture. It requires <strong>zero write, modification, or termination permissions</strong>. Below is the exact JSON IAM policy for production deployment:</p>
+
+  <pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CloudSageStrictReadOnlyOperations",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity",
+        "ec2:DescribeInstances",
+        "ec2:DescribeTags",
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketLocation",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:GetMetricData",
+        "cloudwatch:ListMetrics",
+        "ce:GetCostAndUsage",
+        "ce:GetDimensionValues"
+      ],
+      "Resource": "*"
+    }
+  ]
+}</code></pre>
+
+  <h2>8.2 Security Invariants & System Guardrails</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4>🔒 100% Read-Only Assurance</h4>
+      <p>CloudSage contains no code paths calling <code>RunInstances</code>, <code>TerminateInstances</code>, <code>DeleteBucket</code>, or <code>PutObject</code>. Accidental infrastructure damage is impossible.</p>
+    </div>
+    <div class="feature-card">
+      <h4>🛡️ Zero Secret Leakage</h4>
+      <p>AWS secret access keys and session tokens are never returned by API routes, never logged to stdout, and never rendered in frontend HTML.</p>
+    </div>
+    <div class="feature-card">
+      <h4>🌐 Local Loopback Binding</h4>
+      <p>Default deployment binds strictly to <code>127.0.0.1:8000</code>, preventing unauthorized network access from external interfaces.</p>
+    </div>
+    <div class="feature-card">
+      <h4>🛑 Untrusted Context Isolation</h4>
+      <p>Retrieved RAG documentation chunks are treated as untrusted text. System instructions cannot be overridden by document contents.</p>
+    </div>
+  </div>
+
+  <h2>8.3 The 10 System Prompt Directives</h2>
+  <ol>
+    <li><strong>No Hallucination:</strong> Never invent or hallucinate AWS infrastructure data.</li>
+    <li><strong>Tool Discipline:</strong> Always invoke operational tools when live cloud resource details are requested.</li>
+    <li><strong>Document Grounding:</strong> Ground architectural and troubleshooting concepts in retrieved AWS documentation.</li>
+    <li><strong>Source Transparency:</strong> Clearly distinguish between Live AWS data, Mock development data, and Knowledge Base guidance.</li>
+    <li><strong>Mandatory Citations:</strong> Cite official AWS documentation titles and URLs for knowledge inquiries.</li>
+    <li><strong>INR Standardization:</strong> Display all cloud spending in Indian Rupees (<code>₹</code>) with proper Indian digit grouping. Never mix <code>$</code> and <code>₹</code>.</li>
+    <li><strong>Professional Tone:</strong> Structure technical answers using clean Markdown tables, bullet points, and bold headers.</li>
+    <li><strong>Credential Protection:</strong> Never request or output AWS secret keys.</li>
+    <li><strong>Read-Only Invariant:</strong> Refuse and reject any user requests attempting destructive operations.</li>
+    <li><strong>Graceful Error Handling:</strong> If an API call fails, explain the exact root cause (e.g., missing IAM permission) rather than guessing.</li>
+  </ol>
+</div>
+
+<!-- CHAPTER 9 -->
+<div class="page-break">
+  <h1><span class="chapter-number">09</span> Frontend Dashboard & User Interface Architecture</h1>
+
+  <h2>9.1 Design System & Aesthetic Principles</h2>
+  <p>The CloudSage frontend is built with high-performance Vanilla HTML5, CSS3, and ES6 JavaScript, without bulky framework dependencies. It features a modern, dark/glassmorphic aesthetic inspired by developer-focused observability tools:</p>
+
+  <ul>
+    <li><strong>Typography:</strong> Google Fonts <em>Inter</em> for UI typography and <em>JetBrains Mono</em> for technical telemetry, instance IDs, and code blocks.</li>
+    <li><strong>Color Tokens:</strong> Curated palette using dark slate backgrounds (<code>#090d16</code>, <code>#0f172a</code>), electric blue accents (<code>#38bdf8</code>), emerald success indicators (<code>#22c55e</code>), and purple knowledge badges (<code>#a855f7</code>).</li>
+    <li><strong>Micro-Animations:</strong> Smooth CSS transitions on hover, pulsing status dots for active services, and auto-expanding citation panels.</li>
+  </ul>
+
+  <h2>9.2 UI Component Breakdown</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>File & DOM ID</th>
+        <th>Interactive Capabilities</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Global Header</strong></td>
+        <td><code>header.header</code></td>
+        <td>Displays application brand, active mode badge, API health pill, and AWS STS connection status.</td>
+      </tr>
+      <tr>
+        <td><strong>AI Assistant Feed</strong></td>
+        <td><code>#ai-assistant-card</code></td>
+        <td>Multi-turn chat stream, message bubbles, markdown code blocks, quick-prompt pill buttons, and session reset button.</td>
+      </tr>
+      <tr>
+        <td><strong>Tool & Source Chips</strong></td>
+        <td><code>.message-tools</code>, <code>.sources-box</code></td>
+        <td>Badges showing tools used (e.g. <code>🔧 Tool: inspect_ec2</code>) and expandable AWS documentation citation chips with outbound links.</td>
+      </tr>
+      <tr>
+        <td><strong>AWS Status Panel</strong></td>
+        <td><code>#aws-status-card</code></td>
+        <td>Displays account ID, IAM ARN, active region, and a manual <em>Test Connection</em> button.</td>
+      </tr>
+      <tr>
+        <td><strong>EC2 Inventory Card</strong></td>
+        <td><code>#ec2-card</code></td>
+        <td>Table of discovered EC2 instances with state badges (running/stopped), types, and IP addresses.</td>
+      </tr>
+      <tr>
+        <td><strong>S3 Storage Card</strong></td>
+        <td><code>#s3-card</code></td>
+        <td>List of S3 buckets and creation timestamps with refresh controls.</td>
+      </tr>
+      <tr>
+        <td><strong>CloudWatch Metrics Card</strong></td>
+        <td><code>#cw-card</code></td>
+        <td>Instance CPU lookup input, lookback hours selector, summary statistics (Avg/Max CPU), and SVG trend chart.</td>
+      </tr>
+      <tr>
+        <td><strong>Cost Explorer Panel</strong></td>
+        <td><code>#cost-card</code></td>
+        <td>Spend lookback selector (7/30/90 days), total cost in <strong>INR (₹)</strong>, top driver badge, and percentage progress bars.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- CHAPTER 10 -->
+<div class="page-break">
+  <h1><span class="chapter-number">10</span> Verification, Automated Test Suite & Local Setup</h1>
+
+  <h2>10.1 Automated Test Suite (Pytest)</h2>
+  <p>CloudSage features a comprehensive automated test suite in the <code>tests/</code> directory, comprising <strong>45 test cases</strong> covering all critical paths with zero external network dependencies:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Test Module</th>
+        <th>Test Count</th>
+        <th>Key Scenarios Tested</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>test_health.py</code></td>
+        <td>3 Tests</td>
+        <td><code>/health</code> and <code>/api/health</code> status codes, JSON schema validation, version matching.</td>
+      </tr>
+      <tr>
+        <td><code>test_aws.py</code></td>
+        <td>15 Tests</td>
+        <td>Boto3 wrappers, mock mode toggling, EC2 tag parsing, CloudWatch CPU averaging, Cost Explorer breakdowns.</td>
+      </tr>
+      <tr>
+        <td><code>test_chat.py</code></td>
+        <td>10 Tests</td>
+        <td>Multi-turn memory retention, pronoun resolution, multi-tool queries (EC2+CW, EC2+S3+Cost), session reset.</td>
+      </tr>
+      <tr>
+        <td><code>test_rag.py</code></td>
+        <td>11 Tests</td>
+        <td>VectorStore addition/search, LocalSemanticEmbeddings dimension/normalization, chunker overlap, pipeline citations.</td>
+      </tr>
+      <tr>
+        <td><code>test_currency.py</code></td>
+        <td>6 Tests</td>
+        <td>USD to INR conversion, Indian comma grouping (Lakhs/Crores), negative values, Cost Explorer conversion.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>10.2 Step-by-Step Local Setup Guide</h2>
+  <ol>
+    <li><strong>Clone & Navigate to Repository:</strong>
+      <pre><code>cd cloudsage-main</code></pre>
+    </li>
+    <li><strong>Create & Activate Python Virtual Environment:</strong>
+      <pre><code>python -m venv .venv
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# On Linux/macOS (Bash):
+source .venv/bin/activate</code></pre>
+    </li>
+    <li><strong>Install Dependencies:</strong>
+      <pre><code>pip install -r requirements.txt</code></pre>
+    </li>
+    <li><strong>Build/Ingest the RAG Knowledge Base:</strong>
+      <pre><code>python -m app.rag.ingest</code></pre>
+    </li>
+    <li><strong>Run the Test Suite:</strong>
+      <pre><code>pytest tests/ -v</code></pre>
+    </li>
+    <li><strong>Launch the Local Development Server:</strong>
+      <pre><code>uvicorn app.main:app --reload --host 127.0.0.1 --port 8000</code></pre>
+    </li>
+    <li><strong>Access Application:</strong>
+      <ul>
+        <li>Web Dashboard: <a href="http://127.0.0.1:8000/">http://127.0.0.1:8000/</a></li>
+        <li>Swagger Documentation: <a href="http://127.0.0.1:8000/docs">http://127.0.0.1:8000/docs</a></li>
+      </ul>
+    </li>
+  </ol>
+</div>
+
+<!-- CHAPTER 11 -->
+<div>
+  <h1><span class="chapter-number">11</span> Project Roadmap & Future Enhancements</h1>
+
+  <h2>11.1 Milestone Status</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Milestone Name</th>
+        <th>Status</th>
+        <th>Key Deliverables</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Phase 1</strong></td>
+        <td>Scaffolding & Architecture</td>
+        <td><span class="badge badge-green">Completed</span></td>
+        <td>FastAPI core, Pydantic settings, health check routes, static file mounting.</td>
+      </tr>
+      <tr>
+        <td><strong>Phase 2</strong></td>
+        <td>Real AWS Integration</td>
+        <td><span class="badge badge-green">Completed</span></td>
+        <td>Boto3 tools for STS, EC2, S3, CloudWatch, and Cost Explorer with mock toggle.</td>
+      </tr>
+      <tr>
+        <td><strong>Phase 3</strong></td>
+        <td>GenAI Agent & Tool Calling</td>
+        <td><span class="badge badge-green">Completed</span></td>
+        <td>Autonomous tool dispatch, multi-provider LLM engine, session memory store.</td>
+      </tr>
+      <tr>
+        <td><strong>Phase 4</strong></td>
+        <td>RAG & Knowledge Base</td>
+        <td><span class="badge badge-green">Completed</span></td>
+        <td>VectorStore, LocalSemanticEmbeddings, curated AWS dataset, source citations.</td>
+      </tr>
+      <tr>
+        <td><strong>Phase 5</strong></td>
+        <td>INR Localization & Polishing</td>
+        <td><span class="badge badge-green">Completed</span></td>
+        <td>Indian currency formatting, Lakhs/Crores grouping, glassmorphic UI overhaul.</td>
+      </tr>
+      <tr>
+        <td><strong>Phase 6</strong></td>
+        <td>Expanded Cloud Services</td>
+        <td><span class="badge badge-amber">Upcoming</span></td>
+        <td>Amazon RDS database telemetry, AWS Lambda metrics, DynamoDB table explorer.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>11.2 Extensibility & Production Deployment Recommendations</h2>
+  <ul>
+    <li><strong>Adding New AWS Tools:</strong> Implement a new tool in <code>app/tools/</code>, add its JSON schema to <code>TOOL_DEFINITIONS</code> in <code>app/ai/tool_router.py</code>, and expose a route in <code>app/routes/aws.py</code>.</li>
+    <li><strong>Persistent Database:</strong> Swap the in-memory session store with PostgreSQL or DynamoDB for multi-user enterprise deployments.</li>
+    <li><strong>Containerization:</strong> CloudSage can be packaged as a lightweight Docker container (Python 3.11-slim) and deployed as an internal ECS service or Kubernetes pod.</li>
+  </ul>
+
+  <div class="callout callout-info" style="margin-top: 25px;">
+    <strong>Document Conclusion:</strong> CloudSage represents a comprehensive, secure, and production-ready GenAI assistant designed specifically for modern AWS cloud operations and FinOps cost intelligence.
+  </div>
+</div>
+
+</body>
+</html>
+"""
+
+def generate_pdf():
+    print("Writing HTML documentation template...")
+    with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
+        f.write(html_content)
+    print(f"HTML generated at: {OUTPUT_HTML}")
+
+    print(f"Converting HTML to PDF using Chrome Headless ({CHROME_PATH})...")
+    cmd = [
+        CHROME_PATH,
+        "--headless",
+        "--disable-gpu",
+        "--run-all-compositor-stages-before-draw",
+        "--no-pdf-header-footer",
+        f"--print-to-pdf={OUTPUT_PDF}",
+        str(OUTPUT_HTML)
+    ]
+    
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    if res.returncode == 0 and OUTPUT_PDF.exists():
+        size_kb = OUTPUT_PDF.stat().st_size / 1024
+        print(f"PDF Successfully Generated: {OUTPUT_PDF} ({size_kb:.1f} KB)")
+        return True
+    else:
+        print(f"Error generating PDF. Return code: {res.returncode}")
+        print(f"Stderr: {res.stderr}")
+        return False
+
+if __name__ == "__main__":
+    generate_pdf()
